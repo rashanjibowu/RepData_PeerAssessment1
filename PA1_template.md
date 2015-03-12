@@ -5,7 +5,7 @@ Set global parameters
 
 ```r
 library(knitr)
-opts_chunk$set(cache=FALSE, fig.align='center')
+opts_chunk$set(cache=FALSE, fig.align='center', echo = TRUE)
 ```
 ## Loading and preprocessing the data
 
