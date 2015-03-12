@@ -1,2 +1,16 @@
 # data file
 activity.csv
+
+# data directories - collaborators should just download the data
+data/
+tmpdata/
+
+# Hidden system files
+.RData
+.Rapp.history
+.Rhistory
+
+# Intermediate files
+PA1_template.html
+PA1_template.md
+PA1_template_files/
