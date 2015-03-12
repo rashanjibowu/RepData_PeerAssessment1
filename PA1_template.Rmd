@@ -5,6 +5,12 @@ output:
     keep_md: yes
 ---
 
+Set global parameters
+
+``` {r setup}
+library(knitr)
+opts_chunk$set(cache=FALSE, fig.align='center')
+```
 ## Loading and preprocessing the data
 
 Unzip the file 
@@ -17,40 +23,74 @@ if (!file.exists(filename)) {
     unzip("activity.zip")    
 }
 
-# read file into memory
+```
+
+Read the file into memory
+
+``` {r Read File}
+
 data <- read.csv(filename, na.strings = "NA")
 
-# convert date variable to Date class
+```
+
+Convert date column into the Date format
+
+``` {r Convert date column into the Date format}
+
 data$date <- as.Date(data$date)
+
 ```
 
 
 ## What is the mean total number of steps taken per day?
 
+Calculate total number of steps taken per day
+
 ``` {r Calculating total steps taken per day}
 
-# Calculate total number of steps taken per day
 totalStepsPerDay <- tapply(data$steps, data$date, sum, na.rm = TRUE)
 
-# Make histogram of total steps taken each day
+```
+
+Make histogram of total steps taken each day
+
+``` {r Histogram of total steps taken each day}
+
 hist(totalStepsPerDay, 
      main = "Histogram of Steps Taken Per Day", 
      xlab = "Steps Taken Per Day")
 
-# Mean of the sums
-print(mean(totalStepsPerDay))
-
-# Median of the sums
-print(median(totalStepsPerDay))
 ```
 
+Mean number of steps per day
+
+``` {r Mean number of steps per day}
+
+mean(totalStepsPerDay)
+
+```
+
+Median number of steps per day
+
+``` {r Median number of steps per day}
+
+median(totalStepsPerDay)
+
+```
 
 ## What is the average daily activity pattern?
 
-``` {r Average Daily Patterns}
+Calculate average steps taken per interval
 
-# Calculate average steps taken per interval
+``` {r Average Steps Per Interval}
+
 avgStepsPerInterval <- tapply(data$steps, data$interval, mean, na.rm = TRUE)
+
+```
+
+Reformat and sort data
+
+``` {r Reprocessing}
 
 # Convert to a data frame
 df <- data.frame(avgStepsPerInterval)
@@ -67,27 +107,43 @@ df$interval <- as.integer(as.character(df$interval))
 # Sort by increasing interval order
 df <- df[order(df$interval), ]
 
-# Time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```
+
+Time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+``` {r Time Series Plot}
+
 title <- c("Average Number of Steps Taken Per Interval")
 ylabel <- c("Average Number of Steps Taken")
 xlabel <- c("Interval (5 minutes)")
 
 plot(x = df$interval, y = df$avgStepsPerInterval, type = "l", main = title, ylab = ylabel, xlab = xlabel)
 
+```
+
+```{r Max Steps Taken in Interval}
+
 # Find interval with maximum number of steps taken
-sortedDescendingStepPerInterval <- df[order(df$avgStepsPerInterval, decreasing = TRUE), ]
-print(sortedDescendingStepPerInterval[1,1])
+sortedDescendingStepsPerInterval <- df[order(df$avgStepsPerInterval, decreasing = TRUE), ]
+sortedDescendingStepsPerInterval[1,1]
 
 ```
 
-
 ## Imputing missing values
 
-``` {r Imputing Missing Values}
+Total number of missing values
+
+``` {r Calculate number of missing values}
 
 # Count total number of missing values
 missing <- which(is.na(data$steps))
-print(length(missing))
+length(missing)
+
+```
+
+Imputing Missing Values
+
+```{r Imputing Missing Values}
 
 # Create new dataset to include imputed missing values
 dataWithImputedValues <- data
@@ -112,8 +168,19 @@ fillin <- function() {
 # Actually fill in missing values
 fillin()
 
-# Check for missing values again - should be 0!
-print(nrow(dataWithImputedValues[is.na(dataWithImputedValues$steps),]))
+```
+
+Check again for missing values - should be 0!
+
+``` {r Check again for missing values}
+
+nrow(dataWithImputedValues[is.na(dataWithImputedValues$steps),])
+
+```
+
+Recalculate total number of steps per day. This time, it includes imputed values
+
+``` {r Recalculate total number of of steps per day}
 
 # Calculate total number of steps taken per day
 totalStepsPerDay <- tapply(dataWithImputedValues$steps, 
@@ -121,55 +188,96 @@ totalStepsPerDay <- tapply(dataWithImputedValues$steps,
                            sum, 
                            na.rm = TRUE)
 
-# Make histogram of total steps taken each day
+```
+
+Another histogram of total steps taken each day. This time, it includes imputed values
+
+``` {r Histogram with imputed values}
+
 hist(totalStepsPerDay, 
      main = "Histogram of Steps Taken Per Day", 
      xlab = "Steps Taken Per Day")
 
-# Mean number of steps per day
-print(mean(totalStepsPerDay))
+```
 
-# Median number of steps per day
-print(median(totalStepsPerDay))
+Mean number of steps per day (with imputed values)
+
+``` {r Mean with imputed values}
+
+mean(totalStepsPerDay)
 
 ```
+
+Median number of steps per day (with imputed values)
+
+``` {r Median with imputed values}
+
+median(totalStepsPerDay)
+
+```
+
+#### What is the impact on the mean and median with imputed values?
 
 The mean and median of the steps taken per day are greater when we impute missing values than when we excluded them in prior calculations. Imputing missing values increases the estimate of the total monthly number of steps.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-``` {r Activity Patterns By Weekday Status}
+Load the data.table library and convert data frame to a data table
 
-# Create new factor variable for weekends and weekday
-
-daysOfWeek <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-
-dataWithImputedValues$weekdayStatus <- factor(weekdays(dataWithImputedValues$date), 
-                              levels = daysOfWeek, 
-                              labels = c(rep("weekday", 5), rep("weekend", 2))
-                       )
-```
-Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
-
-``` {r Time Series Plot Revised}
-
+``` {r load data.table}
 library(data.table)
+
 dt <- data.table(dataWithImputedValues)
+```
 
+Create new column for day of the week
 
-aSPI <- dt[, mean(steps), by = interval, ]
-head(aSPI)
+``` {r Create new column for day of the week}
 
+dt[,dayofweek:=weekdays(date)]
+
+```
+
+Create column for weekday status and converge into a 2-level factor
+
+``` {r Create column for weekday status}
+
+dt[,weekdayStatus:=ifelse(dayofweek %in% c("Saturday", "Sunday"), c("weekend"), c("weekday"))]
+
+# Converge to a 2-level factor variable
+dt$weekdayStatus <- factor(dt$weekdayStatus)
+
+```
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+Panel plot setup
+
+``` {r Panel Plot Setup}
+
+# For panel plots, let's use the lattice plotting system
+library(lattice)
+
+# Set up plot parameters
 title <- c("Average Number of Steps Taken Per Interval")
 ylabel <- c("Average Number of Steps Taken")
 xlabel <- c("Interval (5 minutes)")
 
+``` 
 
-# For panel plots, let's use the lattice plotting system
-library(lattice)
-aDT <- dt[order(interval), ]
-xyplot(steps ~ interval | weekdayStatus, 
-       data = aDT, 
+Format data for plotting
+
+```{r Format Data For Plotting}
+
+plotData <- dt[,list(avgSteps = mean(steps)), by = c("interval", "weekdayStatus")]
+
+```
+
+Make panel plot
+
+``` {r Make Panel Plot}
+xyplot(avgSteps ~ interval | weekdayStatus, 
+       data = plotData, 
        layout = c(1,2), 
        type = "l", 
        xlab = xlabel,
